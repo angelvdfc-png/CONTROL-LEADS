@@ -92,4 +92,62 @@
     document.getElementById('btnWa').onclick = () => { const t = document.getElementById('telefono').value.replace(/\D/g,''); if(t) window.open(`https://wa.me/${t}`); };
 </script>
 </body>
+</html>            <label>Agente:</label>
+            <select id="agente" required><option value="">Selecciona...</option><option value="Ángel">Ángel</option><option value="Najla">Najla</option><option value="Cloe">Cloe</option></select>
+        </div>
+        <div class="form-group"><label>Email:</label><input type="email" id="email" required></div>
+        <div class="form-group">
+            <label>Teléfono:</label>
+            <input type="tel" id="telefono">
+            <div class="action-row">
+                <button type="button" class="btn-action btn-llamar" id="btnLlamar">📞 Llamar</button>
+                <button type="button" class="btn-action btn-wa" id="btnWa">💬 WhatsApp</button>
+            </div>
+        </div>
+        <div class="form-group"><label>Nombre del Lead:</label><input type="text" id="nombre"></div>
+        <div class="form-group">
+            <label>Estado:</label>
+            <select id="estado" required onchange="actualizarEstado(this)">
+                <option value="">Selecciona...</option><option value="OK">OK</option><option value="KO">KO</option><option value="INDECISO">INDECISO</option><option value="NO CONTESTA">NO CONTESTA</option><option value="NO QUIERE NADA">NO QUIERE NADA</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Resumen:</label><input type="text" id="notas" readonly></div>
+        <div class="form-group"><label>Texto Extraído:</label><textarea id="textoBruto" readonly></textarea></div>
+        <button type="submit" class="btn-submit">Guardar Lead</button>
+    </form>
+</div>
+<script>
+    document.getElementById('fechaCreacion').valueAsDate = new Date();
+    function actualizarNotas() {
+        const res = `${document.getElementById('fechaCreacion').value} | ${document.getElementById('nombre').value || 'S/N'} | ${document.getElementById('telefono').value || 'S/T'} | ${document.getElementById('estado').value}`;
+        document.getElementById('notas').value = res;
+    }
+    document.getElementById('nombre').addEventListener('input', actualizarNotas);
+    document.getElementById('telefono').addEventListener('input', actualizarNotas);
+    function actualizarEstado(s) {
+        const c = {"OK":"#28a745","KO":"#dc3545","INDECISO":"#ffc107","NO CONTESTA":"#6c757d","NO QUIERE NADA":"#343a40"};
+        s.style.backgroundColor = c[s.value]; s.style.color = s.value==="INDECISO"?"black":"white";
+        actualizarNotas();
+    }
+    document.getElementById('imageInput').addEventListener('change', (e) => {
+        const f = e.target.files[0]; if(!f) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => { const img = document.getElementById('preview'); img.src = ev.target.result; img.style.display='block'; }
+        reader.readAsDataURL(f);
+        const st = document.getElementById('status'); st.style.display='block'; st.innerText="Escaneando...";
+        Tesseract.recognize(f, 'spa+eng').then(({ data: { text } }) => {
+            st.innerText="¡Listo!"; document.getElementById('textoBruto').value = text;
+            const em = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
+            if(em) document.getElementById('email').value = em[0].toLowerCase();
+            const ph = text.match(/(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{3,4}/g);
+            if(ph) document.getElementById('telefono').value = ph[0].trim();
+            const lines = text.split('\n').map(l=>l.trim()).filter(l=>l.length>3);
+            for(let l of lines) { if(!l.includes('@') && !l.match(/\d{5,}/)) { document.getElementById('nombre').value = l; break; } }
+            actualizarNotas();
+        });
+    });
+    document.getElementById('btnLlamar').onclick = () => { if(document.getElementById('telefono').value) window.location.href=`tel:${document.getElementById('telefono').value}`; };
+    document.getElementById('btnWa').onclick = () => { const t = document.getElementById('telefono').value.replace(/\D/g,''); if(t) window.open(`https://wa.me/${t}`); };
+</script>
+</body>
 </html>
